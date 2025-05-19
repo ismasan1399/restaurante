@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mesero - Restaurante La Fuente</title>
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    if (!localStorage.getItem("meseroLoggedIn")) {
+      window.location.href = "login-mesero.html";
+    }
+  </script>
+</head>
+<body>
+
+  <header>
+    <h1>Mesero - Restaurante La Fuente</h1>
+  </header>
+
+  <main class="mesero">
+    <section class="pedido-formulario">
+      <h2>Registrar Pedido</h2>
+      
+      <form id="formulario-pedido">
+        <label for="cliente">Cliente:</label>
+        <input type="text" id="cliente" placeholder="Nombre del cliente" required>
+
+        <label for="mesa">Mesa:</label>
+        <input type="text" id="mesa" placeholder="Número o nombre de mesa" required>
+        
+        <label for="folio">Folio:</label>
+        <input type="text" id="folio" disabled>
+
+        <label for="productos">Selecciona los productos:</label>
+        <select id="productos" multiple required></select>
+
+        <div>
+          <p><strong>Subtotal:</strong> $<span id="subtotal">0</span></p>
+          <p><strong>Total:</strong> $<span id="total">0</span></p>
+        </div>
+
+        <button type="submit">Registrar Pedido</button>
+      </form>
+    </section>
+  </main>
+
+  <button id="logoutMeseroBtn" class="logout-btn">Cerrar sesión</button>
+
+  <footer>
+    <p><a href="index.html">← Volver a la Página Principal</a></p>
+    <p>© 2025 La Fuente</p>
+  </footer>
+
+  <script>
+    const productosSelect = document.getElementById("productos");
+    const subtotalElement = document.getElementById("subtotal");
+    const totalElement = document.getElementById("total");
+
+    const productos = [
+      { nombre: "Chilaquiles Rojos, Verdes o Divorciados", precio: 66 },
+      { nombre: "Chilaquiles con Huevo", precio: 76 },
+      { nombre: "Chilaquiles con Pollo", precio: 84 },
+      { nombre: "Chilaquiles con Carne Asada", precio: 84 },
+      { nombre: "Huevos al Gusto Rancheros", precio: 66 },
+      { nombre: "Huevos al Gusto a la Mexicana", precio: 66 },
+      { nombre: "Huevos al Gusto con Jamón, Tocino, Chorizo o Salchicha", precio: 84 },
+      { nombre: "Omeletes Sencillo", precio: 70 },
+      { nombre: "Omeletes Combinado con 2 Ingredientes", precio: 70 },
+      { nombre: "Platelitos Chicharrón en Salsa", precio: 66 },
+      { nombre: "Platelitos Carne Asada Salsa Verde o Roja", precio: 80 },
+      { nombre: "Pechuga de Pollo a la Plancha", precio: 90 },
+      { nombre: "Molletes con Chorizo, Tocino o Jamón", precio: 50 },
+      { nombre: "Rancheros con Salsa Mexicana", precio: 55 },
+      { nombre: "Dulces Azúcar, Mermelada, Cajeta o Lechera", precio: 50 },
+      { nombre: "Pepitos con Generosa Porción de Frijoles", precio: 75 },
+      { nombre: "Hot Cakes", precio: 55 },
+      { nombre: "Hot Cakes con Frutas", precio: 60 },
+      { nombre: "Enchiladas Sencillas", precio: 55 },
+      { nombre: "Enchiladas con Bistec", precio: 60 },
+      { nombre: "Yogurt con Frutas", precio: 43 },
+      { nombre: "Ensaladas Vegetales", precio: 55 },
+      { nombre: "Ensaladas de Pollo o Atún", precio: 75 },
+      { nombre: "Jugos Naturales", precio: 30 },
+      { nombre: "Limonada", precio: 32 },
+      { nombre: "Licuados de Frutas", precio: 35 },
+      { nombre: "Chocomilk", precio: 35 },
+      { nombre: "Café al Gusto", precio: 22 },
+      { nombre: "Refrescos", precio: 27 },
+      { nombre: "Aguas Frescas", precio: 27 }
+    ];
+
+    productos.forEach(producto => {
+      const option = document.createElement("option");
+      option.value = JSON.stringify(producto);
+      option.textContent = `${producto.nombre} - $${producto.precio}`;
+      productosSelect.appendChild(option);
+    });
+
+    function generarFolio() {
+      const randomNum = Math.floor(Math.random() * 1000000);
+      const timestamp = Date.now();
+      return `FOLIO-${randomNum}-${timestamp}`;
+    }
+
+    document.getElementById("folio").value = generarFolio();
+
+    productosSelect.addEventListener("change", function() {
+      let subtotal = 0;
+      const selected = Array.from(productosSelect.selectedOptions);
+      selected.forEach(option => {
+        const producto = JSON.parse(option.value);
+        subtotal += producto.precio;
+      });
+
+      subtotalElement.innerText = subtotal;
+      totalElement.innerText = subtotal;
+    });
+
+    const formulario = document.getElementById("formulario-pedido");
+    formulario.addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const cliente = document.getElementById("cliente").value;
+      const mesa = document.getElementById("mesa").value;
+      const productosSeleccionados = Array.from(productosSelect.selectedOptions).map(option => JSON.parse(option.value));
+      const total = parseFloat(totalElement.innerText);
+      const folio = generarFolio();
+
+      const pedido = {
+        cliente: cliente,
+        mesa: mesa,
+        productos: productosSeleccionados,
+        total: total,
+        folio: folio,
+        estado: "pendiente"
+      };
+
+      try {
+        const respuesta = await fetch("http://localhost:3000/api/pedidos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(pedido)
+        });
+
+        if (respuesta.ok) {
+          alert("✅ Pedido registrado correctamente.");
+          formulario.reset();
+          subtotalElement.innerText = "0";
+          totalElement.innerText = "0";
+          document.getElementById("folio").value = generarFolio();
+        } else {
+          alert("❌ Error al registrar el pedido.");
+        }
+      } catch (error) {
+        console.error("❌ Error en la conexión:", error);
+        alert("❌ No se pudo conectar al servidor.");
+      }
+    });
+
+    document.getElementById("logoutMeseroBtn").addEventListener("click", function() {
+      localStorage.removeItem("meseroLoggedIn");
+      window.location.href = "login-mesero.html";
+    });
+  </script>
+
+</body>
+</html>

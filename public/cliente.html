@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pedido a Domicilio - Restaurante La Fuente</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <header>
+    <h1>Pedido a Domicilio - Restaurante La Fuente</h1>
+  </header>
+
+  <main class="cliente">
+    <section class="pedido-formulario">
+      <h2>Haz tu pedido</h2>
+
+      <form id="formulario-pedido-cliente">
+        <label for="cliente">Nombre del cliente:</label>
+        <input type="text" id="cliente" placeholder="Nombre completo" required />
+
+        <label for="telefono">Teléfono:</label>
+        <input type="tel" id="telefono" placeholder="Ej. 3312345678" required pattern="[0-9]{10}" />
+
+        <label for="direccion">Dirección:</label>
+        <textarea id="direccion" placeholder="Calle, número, colonia..." required></textarea>
+
+        <label for="folio">Folio:</label>
+        <input type="text" id="folio" disabled />
+
+        <label for="productos">Selecciona tus productos:</label>
+        <select id="productos" multiple required></select>
+
+        <div>
+          <p><strong>Subtotal:</strong> $<span id="subtotal">0</span></p>
+          <p><strong>Total:</strong> $<span id="total">0</span></p>
+        </div>
+
+        <button type="submit">Enviar Pedido</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <p><a href="index.html">← Volver a la Página Principal</a></p>
+    <p>© 2025 La Fuente</p>
+  </footer>
+
+  <script>
+    const productosSelect = document.getElementById("productos");
+    const subtotalElement = document.getElementById("subtotal");
+    const totalElement = document.getElementById("total");
+
+    const productos = [
+      { nombre: "Chilaquiles Rojos", precio: 66 },
+      { nombre: "Chilaquiles con Pollo", precio: 84 },
+      { nombre: "Huevos al Gusto", precio: 66 },
+      { nombre: "Molletes", precio: 50 },
+      { nombre: "Hot Cakes", precio: 55 },
+      { nombre: "Enchiladas con Bistec", precio: 60 },
+      { nombre: "Ensalada de Pollo", precio: 75 },
+      { nombre: "Jugos Naturales", precio: 30 },
+      { nombre: "Licuado", precio: 35 },
+      { nombre: "Aguas Frescas", precio: 27 }
+    ];
+
+    productos.forEach(producto => {
+      const option = document.createElement("option");
+      option.value = JSON.stringify(producto);
+      option.textContent = `${producto.nombre} - $${producto.precio}`;
+      productosSelect.appendChild(option);
+    });
+
+    function generarFolio() {
+      const randomNum = Math.floor(Math.random() * 1000000);
+      const timestamp = Date.now();
+      return `FOLIO-${randomNum}-${timestamp}`;
+    }
+
+    document.getElementById("folio").value = generarFolio();
+
+    productosSelect.addEventListener("change", () => {
+      let subtotal = 0;
+      const selected = Array.from(productosSelect.selectedOptions);
+      selected.forEach(option => {
+        const producto = JSON.parse(option.value);
+        subtotal += producto.precio;
+      });
+      subtotalElement.innerText = subtotal;
+      totalElement.innerText = subtotal;
+    });
+
+    const formulario = document.getElementById("formulario-pedido-cliente");
+    formulario.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const cliente = document.getElementById("cliente").value;
+      const telefono = document.getElementById("telefono").value;
+      const direccion = document.getElementById("direccion").value;
+      const productosSeleccionados = Array.from(productosSelect.selectedOptions).map(opt => JSON.parse(opt.value));
+      const total = parseFloat(totalElement.innerText);
+      const folio = generarFolio();
+
+      const pedido = {
+        cliente,
+        telefono,
+        direccion,
+        productos: productosSeleccionados,
+        total,
+        folio,
+        estado: "pendiente",
+        tipo: "domicilio"
+      };
+
+      try {
+        const respuesta = await fetch("http://localhost:3000/api/pedidos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(pedido)
+        });
+
+        if (respuesta.ok) {
+          alert("✅ Pedido enviado con éxito. Te contactaremos pronto.");
+          formulario.reset();
+          subtotalElement.innerText = "0";
+          totalElement.innerText = "0";
+          document.getElementById("folio").value = generarFolio();
+        } else {
+          alert("❌ Error al enviar el pedido.");
+        }
+      } catch (error) {
+        console.error("❌ Error al conectar con el servidor:", error);
+        alert("❌ No se pudo conectar con el servidor.");
+      }
+    });
+  </script>
+</body>
+</html>
