@@ -47,6 +47,8 @@
   </footer>
 
   <script>
+    const API_URL = "https://restaurante-halw.onrender.com";
+
     document.getElementById("cerrar-sesion").addEventListener("click", () => {
       localStorage.removeItem("loggedIn");
       window.location.href = "login-administrador.html";
@@ -57,7 +59,7 @@
       listaPedidos.innerHTML = "Cargando pedidos...";
 
       try {
-        const respuesta = await fetch("http://localhost:3000/api/pedidos");
+        const respuesta = await fetch(`${API_URL}/api/pedidos`);
         const pedidos = await respuesta.json();
 
         if (pedidos.length === 0) {
@@ -106,13 +108,13 @@
 
       if (nuevoEstado === "terminado") {
         if (confirm("¿Estás seguro de que quieres marcar este pedido como terminado y eliminarlo?")) {
-          await fetch(`http://localhost:3000/api/pedidos/${id}`, { method: "DELETE" });
+          await fetch(`${API_URL}/api/pedidos/${id}`, { method: "DELETE" });
           cargarPedidos();
           return;
         }
       }
 
-      await fetch(`http://localhost:3000/api/pedidos/${id}`, {
+      await fetch(`${API_URL}/api/pedidos/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: nuevoEstado })

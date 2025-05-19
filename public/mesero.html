@@ -52,6 +52,7 @@
   </footer>
 
   <script>
+    const API_URL = "https://restaurante-halw.onrender.com";
     const productosSelect = document.getElementById("productos");
     const subtotalElement = document.getElementById("subtotal");
     const totalElement = document.getElementById("total");
@@ -127,16 +128,17 @@
       const folio = generarFolio();
 
       const pedido = {
-        cliente: cliente,
-        mesa: mesa,
+        cliente,
+        mesa,
         productos: productosSeleccionados,
-        total: total,
-        folio: folio,
-        estado: "pendiente"
+        total,
+        folio,
+        estado: "pendiente",
+        tipo: "mesa"
       };
 
       try {
-        const respuesta = await fetch("http://localhost:3000/api/pedidos", {
+        const respuesta = await fetch(`${API_URL}/api/pedidos`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(pedido)
